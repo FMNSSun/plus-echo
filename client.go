@@ -5,6 +5,26 @@ import "fmt"
 import "net"
 import "plus"
 
+type cryptoContext struct {
+	key byte
+}
+
+func (c *cryptoContext) EncryptAndProtect(header []byte, payload []byte) ([]byte, error) {
+	for i, v := range payload {
+		payload[i] = v ^ c.key
+	}
+
+	return payload, nil
+}
+
+func (c *cryptoContext) DecryptAndValidate(header []byte, payload []byte) ([]byte, bool, error) {
+	for i, v := range payload {
+		payload[i] = v ^ c.key
+	}
+
+	return payload, true, nil
+}
+
 func main() {
 	args := os.Args
 
@@ -37,11 +57,12 @@ func client(laddr string, remoteAddr string) {
 
 
 	connectionManager, connection := PLUS.NewConnectionManagerClient(packetConn, 1989, udpAddr)
+	connection.SetCryptoContext(&cryptoContext{key:0x3B})
 	go connectionManager.Listen()
 
 	connection.SetSFlag(true)
 
-	buffer := []byte{0x10, 0x20, 0x30, 0x40, 0x50}
+	buffer := []byte{0x65, 0x66, 0x67, 0x68}
 	err = connection.Write(buffer)
 
 	if err != nil {

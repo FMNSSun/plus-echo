@@ -5,6 +5,26 @@ import "fmt"
 import "net"
 import "plus"
 
+type cryptoContext struct {
+	key byte
+}
+
+func (c *cryptoContext) EncryptAndProtect(header []byte, payload []byte) ([]byte, error) {
+	for i, v := range payload {
+		payload[i] = v ^ c.key
+	}
+
+	return payload, nil
+}
+
+func (c *cryptoContext) DecryptAndValidate(header []byte, payload []byte) ([]byte, bool, error) {
+	for i, v := range payload {
+		payload[i] = v ^ c.key
+	}
+
+	return payload, true, nil
+}
+
 func main() {
 	args := os.Args
 
@@ -30,6 +50,7 @@ func server(addr string) {
 	connectionManager := PLUS.NewConnectionManager(packetConn)
 	connectionManager.SetInitConn(func(conn *PLUS.Connection) error {
 		conn.SetSFlag(true)
+		conn.SetCryptoContext(&cryptoContext{key:0x3B})
 		return nil
 	})
 
