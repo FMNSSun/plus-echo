@@ -75,7 +75,7 @@ func server(addr string) {
 					return
 				}
 
-				err = connection.Write(buffer)
+				_, err = connection.Write(buffer)
 
 				if err != nil {
 					fmt.Printf("[SERVER] Error: %s\n", err.Error())

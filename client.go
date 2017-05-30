@@ -63,7 +63,7 @@ func client(laddr string, remoteAddr string) {
 	connection.SetSFlag(true)
 
 	buffer := []byte{0x65, 0x66, 0x67, 0x68}
-	err = connection.Write(buffer)
+	_, err = connection.Write(buffer)
 
 	if err != nil {
 		fmt.Printf("[CLIENT] Error: %s\n", err.Error())
