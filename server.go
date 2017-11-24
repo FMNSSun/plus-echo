@@ -3,7 +3,8 @@ package main
 import "os"
 import "fmt"
 import "net"
-import "plus"
+import "flag"
+import "github.com/mami-project/plus-lib"
 
 type cryptoContext struct {
 	key byte
@@ -26,18 +27,19 @@ func (c *cryptoContext) DecryptAndValidate(header []byte, payload []byte) ([]byt
 }
 
 func main() {
-	args := os.Args
+	localAddr := flag.String("local-addr", "", "Local address:port to listen on")
+	flag.Parse()
 
-	fmt.Println("server")
+	fmt.Println("[SERVER]")
 
-	if len(args) == 0 {
-		showUsage()
+	if *localAddr == "" {
+		flag.Usage()
 		return
 	}
 
 	PLUS.LoggerDestination = os.Stdout
 
-	server("localhost:50001")
+	server(*localAddr)
 }
 
 func server(addr string) {
@@ -59,7 +61,7 @@ func server(addr string) {
 	for {
 		connection := connectionManager.Accept()
 
-
+		fmt.Println("[SERVER] Accepted connection...")
 
 		go func() {
 			for {
@@ -84,7 +86,4 @@ func server(addr string) {
 			}
 		}()
 	}
-}
-
-func showUsage() {
 }

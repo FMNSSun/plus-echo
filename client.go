@@ -3,7 +3,8 @@ package main
 import "os"
 import "fmt"
 import "net"
-import "plus"
+import "github.com/mami-project/plus-lib"
+import "flag"
 
 type cryptoContext struct {
 	key byte
@@ -26,18 +27,21 @@ func (c *cryptoContext) DecryptAndValidate(header []byte, payload []byte) ([]byt
 }
 
 func main() {
-	args := os.Args
+	localAddr := flag.String("local-addr", "", "Local address:port to listen on.")
+	remoteAddr := flag.String("remote-addr", "", "Remote address:port to connect to.")
 
-	fmt.Println("client")
+	fmt.Println("[CLIENT]")
 
-	if len(args) == 0 {
-		showUsage()
+	flag.Parse()
+
+	if *localAddr == "" || *remoteAddr == "" {
+		flag.Usage()
 		return
 	}
 
 	PLUS.LoggerDestination = os.Stdout
 
-	client("localhost:50002", "localhost:50001")
+	client(*localAddr, *remoteAddr)
 }
 
 func client(laddr string, remoteAddr string) {
@@ -58,30 +62,39 @@ func client(laddr string, remoteAddr string) {
 
 	connectionManager, connection := PLUS.NewConnectionManagerClient(packetConn, 1989, udpAddr)
 	connection.SetCryptoContext(&cryptoContext{key:0x3B})
+	connection.SetSFlag(true);
 	go connectionManager.Listen()
 
-	connection.SetSFlag(true)
+	var buffer []byte
 
-	buffer := []byte{0x65, 0x66, 0x67, 0x68}
-	_, err = connection.Write(buffer)
+	for i := 0; i < 3; i++ {
 
-	if err != nil {
-		fmt.Printf("[CLIENT] Error: %s\n", err.Error())
-		return
+		buffer = []byte{0x65, 0x66, 0x67, 0x68}
+		_, err = connection.Write(buffer)
+
+		if err != nil {
+			fmt.Printf("[CLIENT] Error: %s\n", err.Error())
+			return
+		}
+
+		fmt.Printf("[CLIENT] Sent: %q\n", buffer)
+
+		connection.QueuePCFRequest(0x01, 0, []byte{0xCA, 0xFE, 0xBA, 0xBE})
+
+		n, err := connection.Read(buffer)
+
+		if err != nil {
+			fmt.Printf("[CLIENT] Error: %s\n", err.Error())
+			return
+		}
+
+		buffer = buffer[:n]
+
+		fmt.Printf("[CLIENT] Got: %q\n", buffer)
 	}
 
-	fmt.Printf("[CLIENT] Sent: %q\n", buffer)
-
-	n, err := connection.Read(buffer)
-
-	if err != nil {
-		fmt.Printf("[CLIENT] Error: %s\n", err.Error())
-		return
-	}
-
-	buffer = buffer[:n]
-
-	fmt.Printf("[CLIENT] Got: %q\n", buffer)
+	connection.Close()
+	connectionManager.Close()
 }
 
 func showUsage() {
