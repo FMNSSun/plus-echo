@@ -5,6 +5,7 @@ import "fmt"
 import "net"
 import "github.com/mami-project/plus-lib"
 import "flag"
+import "time"
 
 type cryptoContext struct {
 	key byte
@@ -83,16 +84,32 @@ func client(laddr string, remoteAddr string) {
 
 		connection.QueuePCFRequest(0x01, 0, []byte{0x00})
 
-		n, err := connection.Read(buffer)
+		ch := make(chan bool)
+		tmch := time.NewTimer(150 * time.Millisecond)
 
-		if err != nil {
-			fmt.Printf("[CLIENT] Error: %s\n", err.Error())
-			return
+		fmt.Printf("[CLIENT] Awaiting ECHO\n")
+
+		go func() {
+			n, err := connection.Read(buffer)
+
+			if err != nil {
+				fmt.Printf("[CLIENT] Error: %s\n", err.Error())
+				return
+			}
+
+			buffer = buffer[:n]
+
+			fmt.Printf("[CLIENT] Got: %q\n", buffer)
+
+			ch <- true
+		}()
+
+		select {
+		case _ = <- ch:
+			fmt.Printf("[CLIENT] RECV OK")
+		case _ = <- tmch.C:
+			fmt.Printf("[CLIENT] RECV TIMED OUT")
 		}
-
-		buffer = buffer[:n]
-
-		fmt.Printf("[CLIENT] Got: %q\n", buffer)
 	}
 
 	connection.Close()
