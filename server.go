@@ -51,10 +51,11 @@ func server(addr string) {
 
 	connectionManager := PLUS.NewConnectionManager(packetConn)
 	connectionManager.SetInitConn(func(conn *PLUS.Connection) error {
-		conn.SetSFlag(true)
 		conn.SetCryptoContext(&cryptoContext{key:0x3B})
 		return nil
 	})
+
+	connectionManager.SetTransparentMode()
 
 	go connectionManager.Listen()
 

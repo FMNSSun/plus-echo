@@ -62,12 +62,14 @@ func client(laddr string, remoteAddr string) {
 
 	connectionManager, connection := PLUS.NewConnectionManagerClient(packetConn, 1989, udpAddr)
 	connection.SetCryptoContext(&cryptoContext{key:0x3B})
-	connection.SetSFlag(true);
+
+	connectionManager.SetTransparentMode()
+
 	go connectionManager.Listen()
 
 	var buffer []byte
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 128; i++ {
 
 		buffer = []byte{0x65, 0x66, 0x67, 0x68}
 		_, err = connection.Write(buffer)
@@ -79,7 +81,7 @@ func client(laddr string, remoteAddr string) {
 
 		fmt.Printf("[CLIENT] Sent: %q\n", buffer)
 
-		connection.QueuePCFRequest(0x01, 0, []byte{0xCA, 0xFE, 0xBA, 0xBE})
+		connection.QueuePCFRequest(0x01, 0, []byte{0x00})
 
 		n, err := connection.Read(buffer)
 
